@@ -7,6 +7,18 @@ from odoo import fields, models
 from odoo.http import request
 
 
+def _http_header_or_false(header_name):
+    """
+    /!\\ ONLY FOR ODOO MIGRATION /!\
+    Provide a default value for fields using odoo.http.request,
+    and provide a dummy string if defined outside of a HTTP request.
+    """
+    try:
+        return request.httprequest.headers.environ.get(header_name)
+    except RuntimeError:
+        return "False"
+
+
 class AffiliateRequest(models.Model):
     _name = "sale.affiliate.request"
     _order = "create_date desc"
@@ -34,28 +46,20 @@ class AffiliateRequest(models.Model):
     ip = fields.Char(
         string="Client IP",
         required=True,
-        default=lambda self: request.httprequest.headers.environ.get(
-            "REMOTE_ADDR",
-        ),
+        default=lambda self: _http_header_or_false("REMOTE_ADDR"),
     )
     referrer = fields.Char(
-        default=lambda self: request.httprequest.headers.environ.get(
-            "HTTP_REFERER",
-        ),
+        default=lambda self: _http_header_or_false("HTTP_REFERER"),
         help="Request session referrer header",
     )
     user_agent = fields.Char(
         required=True,
-        default=lambda self: request.httprequest.headers.environ.get(
-            "HTTP_USER_AGENT",
-        ),
+        default=lambda self: _http_header_or_false("HTTP_USER_AGENT"),
         help="Request session user agent",
     )
     accept_language = fields.Char(
         required=True,
-        default=lambda self: request.httprequest.headers.environ.get(
-            "HTTP_ACCEPT_LANGUAGE",
-        ),
+        default=lambda self: _http_header_or_false("HTTP_ACCEPT_LANGUAGE"),
         help="Request session accept language",
     )
     sale_ids = fields.One2many(
